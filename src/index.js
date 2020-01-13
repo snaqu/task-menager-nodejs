@@ -11,71 +11,157 @@ app.use(express.json());
 
 // users
 
-app.post('/users', (req, res) => {
+app.post('/users', async (req, res) => {
   const user = new User(req.body);
 
-  user.save().then(() => {
+  try {
+    await user.save(); 
     res.send(user);
-  }).catch((err) => {
-    res.status(400).send(err);
-  })
+  } catch (error) {
+    res.status(400).send(error);
+  }
 });
 
-app.get('/users', (req, res) => {
-  User.find({}).then((users) => {
+app.get('/users', async (req, res) => {
+  try {
+    const users = await User.find({});
     res.send(users);
-  }).catch((err) => {
-    res.status(500).send(err);
-  })
+  } catch (error) {
+    res.status(500).send(error);    
+  }
 });
 
-app.get('/users/:id', (req, res) => {
+app.get('/users/:id', async (req, res) => {
   const _id = req.params.id;
 
-  User.findById(_id).then((user) => {
+  try {
+    const user = await User.findById(_id);
+    
     if (!user) {
       return res.status(404).send();
     }
 
     res.send(user);
-  }).catch((err) => {
-    res.status(500).send(err);
-  })
-})
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+app.patch('/users/:id', async (req, res) => {
+  const keysToUpdate = Object.keys(req.body);
+  const allowedKeys = ['name', 'email', 'age', 'password'];
+  const checkIfKeysToUpdateAreCorrect = keysToUpdate.every((key) => allowedKeys.includes(key));
+
+  if (!checkIfKeysToUpdateAreCorrect) {
+    return res.status(400).send({ error: 'Object keys are not valid!' });
+  }
+
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, req.body, { 
+      new: true,
+      runValidators: true,
+    });
+
+    if (!user) {
+      return res.status(404).send();
+    }
+
+    res.send(user);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+app.delete('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findByIdAndRemove(req.params.id);
+
+    if (!user) {
+      return res.status(404).send();
+    }
+
+    res.send(user);
+  } catch (error) {
+    console.log('TCL: error', error);
+    res.status(500).send(error);
+  }
+});
 
 // tasks
 
-app.post('/tasks', (req,res) => {
+app.post('/tasks', async (req,res) => {
   const task = new Task(req.body);
 
-  task.save().then(() => {
+  try {
+    await task.save();
     res.send(task);
-  }).catch((err) => {
-    res.status(400).send(err);
-  })
+  } catch (error) {
+    res.status(400).send(error);
+  }
 });
 
-app.get('/tasks', (req, res) => {
-  Task.find({}).then((tasks) => {
+app.get('/tasks', async (_, res) => {
+  try {
+    const tasks = await Task.find({});
     res.send(tasks);
-  }).catch((err) => {
-    res.status(500).send(err);
-  })
+  } catch (error) {
+    res.status(500).send(error);
+  }
 })
 
-app.get('/tasks/:id', (req, res) => {
+app.get('/tasks/:id', async (req, res) => {
   const _id = req.params.id;
-  console.log('TCL: req.params', req.params);
 
-  Task.findById(_id).then((task) => {
+  try {
+    const task = await Task.findById(_id);
+
     if (!task) {
       return res.status(404).send();
     }
 
     res.send(task);
-  }).catch((err) => {
-    res.send(500).send(err);
-  })
+  } catch (error) {
+    res.status(500).send(error);
+  }
+});
+
+app.patch('/tasks/:id', async (req, res) => {
+  const reqKeys = Object.keys(req.body);
+  const allowedKeys = ['title', 'description', 'completed'];
+  const areKeysValid = reqKeys.every((key) => allowedKeys.includes(key));
+
+  if (!areKeysValid) {
+    return res.status(500).send({ error: "Object keys are invalid!" });
+  } 
+
+  try {
+    const task = await Task.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
+      runValidators: true,
+    })
+
+    if (!task) {
+      return res.status(404).send();
+    }
+
+    res.send(task);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+});
+
+app.delete('/tasks/:id', async (req, res) => {
+  try {
+    const task = await Task.findByIdAndRemove(req.params.id);
+
+    if (!task) {
+      return res.status(404).send();
+    }
+
+    res.send(task);
+  } catch (error) {
+    res.status(500).send(error);
+  }
 })
 
 app.listen(port, () => {
