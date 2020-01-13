@@ -4,5 +4,6 @@ const mongoose = require('mongoose');
 
 mongoose.connect(mongooseUrl, {
   useFindAndModify: false,
-  useMongoClient: true,
+  useUnifiedTopology: true,
+  useNewUrlParser: true,
 })
